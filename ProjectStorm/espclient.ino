@@ -30,6 +30,7 @@ void setup() {
 void loop() {
  valSensor = getSensorData();
  String getData = "field1="+String(valSensor);
+ getData += "&field2=192.168.4.4";
  
  httppost(getData);
 }
