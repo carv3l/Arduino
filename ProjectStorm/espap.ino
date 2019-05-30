@@ -1,5 +1,3 @@
-
-
 /*
 Geekstips.com
 IoT project - Communication between two ESP8266 - Talk with Each Other
@@ -19,13 +17,21 @@ String slave_chuva = "192.168.4.4";
 const char* ssid = "espAP";
 const char* password = "poiou123";
 
+unsigned long startMillis;  //some global variables available anywhere in the program
+unsigned long currentMillis;
+
 ESP8266WebServer server(80);
 WiFiClient client;
+
+
 void setup() {
   Serial.begin(9600);
   WiFi.mode(WIFI_AP_STA);
   setupAccessPoint();
+ startMillis = millis();  //initial start time
+  
 }
+
 // Handling the / root web page from my server
 void handle_index() {
   server.send(200, "text/plain", "Get the f**k out from my server!");
@@ -33,14 +39,19 @@ void handle_index() {
 
 // Handling the /feed page from my server
 void handle_feed() {
+   if (currentMillis - startMillis >= 1500)  //test whether the period has elapsed
+  {
   String data = server.arg("field1");
   String ipaddress = server.arg("field2");
   Serial.println(data);
   Serial.println(ipaddress);
-
   if(ipaddress == slave_chuva){
   setupStMode(data);
   }
+  startMillis = currentMillis;
+  }
+
+  
 }
 
 void setupAccessPoint(){
@@ -115,6 +126,8 @@ if(statusc >= 1){
        server.handleClient();
        
     }
+
+    currentMillis = millis();
   
   
 }
