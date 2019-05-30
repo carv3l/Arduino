@@ -7,9 +7,13 @@ ESP8266 Arduino code example
 */
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <ESP8266HTTPClient.h>
+
 // IoT platform Credentials
 String apiKey = "20HRVWVYRKW1ZJ3M";
 const char* logServer = "api.thingspeak.com";
+
+String slave_chuva = "192.168.4.4";
 
 // Internet router credentials
 const char* ssid = "espAP";
@@ -29,13 +33,14 @@ void handle_index() {
 
 // Handling the /feed page from my server
 void handle_feed() {
-  String field1 = server.arg("field1");
-  String all = server.arg();
+  String data = server.arg("field1");
+  String ipaddress = server.arg("field2");
+  Serial.println(data);
+  Serial.println(ipaddress);
 
-  
-  Serial.println(field1);
-  Serial.println(all);
-  setupStMode(field1);
+  if(ipaddress == slave_chuva){
+  setupStMode(data);
+  }
 }
 
 void setupAccessPoint(){
@@ -50,7 +55,7 @@ void setupAccessPoint(){
   setupServer();
 }
 
-void setupServer(){
+void setupServer(){  
   Serial.println("** SETUP SERVER **");
   Serial.println("- starting server :");
   server.on("/", handle_index);
@@ -72,9 +77,6 @@ void setupStMode(String field1){
   Serial.println();
   Serial.println("- succesfully connected");
   Serial.println("- starting client");
-  
-//  WiFiClient client;
-
   Serial.println("- connecting to Database server: " + String(logServer));
   if (client.connect(logServer, 80)) {
     Serial.println("- succesfully connected");
@@ -103,6 +105,41 @@ void setupStMode(String field1){
 }
 
 void loop() {
+ int statusc = client_status();
 //server.send(200, "text/html", "<form action=\"/LED\" method=\"POST\"><input type=\"submit\" value=\"Toggle LED\"></form>");
-  server.handleClient();
+sendHttpRequest();
+
+if(statusc >= 1){
+        
+        delay(1000);
+       server.handleClient();
+       
+    }
+  
+  
+}
+
+int client_status() {
+ 
+  unsigned char number_client;
+  
+  number_client= wifi_softap_get_station_num();
+
+  Serial.print(" Total Connected Clients are = ");
+  Serial.println(number_client);
+  
+
+  
+  delay(500);
+  return number_client;
+}
+
+
+void sendHttpRequest() {
+  HTTPClient http;
+  http.begin("192.168.4.4");
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  http.POST("response=OLA");
+  http.writeToStream(&Serial);
+  http.end();
 }
